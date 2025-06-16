@@ -108,6 +108,17 @@ public class Board {
         return count;
     }
 
+    public boolean checkVictory() {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                Cell cell = grid[r][c];
+                if (!cell.isMine() && !cell.isRevealed())
+                    return false;
+            }
+        }
+        return true;
+    }
+
     // DFS (Depth-First Search) — Busca em Profundidade
     public void revealRecursively(int row, int col) {
         if (row < 0 || row >= rows || col < 0 || col >= cols)

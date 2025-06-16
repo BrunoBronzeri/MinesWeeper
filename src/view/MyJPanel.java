@@ -23,13 +23,40 @@ public class MyJPanel extends JPanel {
             for (int c = 0; c < cols; c++) {
                 JButton btn = new JButton();
                 btn.setPreferredSize(new Dimension(40, 40));
+                btn.setFont(new Font("Monospaced", Font.BOLD, 20));
+                btn.setBackground(new Color(150, 220, 80));
+                btn.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+                // btn.setBackground(new Color(180, 220, 180));
+
 
                 int finalR = r;
                 int finalC = c;
+                
                 btn.addMouseListener(new MouseAdapter() {
+
+                    // Button:hover simulator ----------------
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        if (!board.getCell(finalR, finalC).isRevealed()) {
+                            btn.setBackground(new Color(180, 200, 255));
+                        }
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        if (!board.getCell(finalR, finalC).isRevealed()) {
+                            btn.setBackground(new Color(160, 230, 70));
+                        }
+                    }
+                    // Button:hover simulator ----------------
+
                     @Override
                     public void mousePressed(MouseEvent e) {
-                        handleClick(finalR, finalC);
+                        if (SwingUtilities.isRightMouseButton(e)) {
+                            handleFlag(finalR, finalC);
+                        } else if (SwingUtilities.isLeftMouseButton(e)) {
+                            handleClick(finalR, finalC);
+                        }
                     }
                 });
 
@@ -47,35 +74,39 @@ public class MyJPanel extends JPanel {
 
         Cell cell = board.getCell(row, col);
 
-        if (cell.isRevealed()) {
+        if (cell.isRevealed() || cell.isFlagged())
             return;
-        }
-
-        // cell.reveal();
-
-        // if (cell.isMine()) {
-        //     buttons[row][col].setText("X");
-        //     buttons[row][col].setBackground(Color.RED);
-        //     System.out.println("BOOM! Uma mina foi explodida.");
-        // } else {
-        //     int count = cell.getAdjacentMines();
-        //     if (count > 0) {
-        //         buttons[row][col].setText(String.valueOf(count));
-        //     } else {
-        //         buttons[row][col].setText("");
-        //     }
-        //     buttons[row][col].setBackground(Color.LIGHT_GRAY);
-        // }
 
         if (cell.isMine()) {
             cell.reveal();
-            buttons[row][col].setText("X");
+
+            buttons[row][col].setIcon(ImageAssets.MINE_ICON);
+            buttons[row][col].setText("");
+
             buttons[row][col].setBackground(Color.RED);
             System.out.println("BOOM! Uma mina foi explodida.");
         } else {
             board.revealRecursively(row, col);
             updateButtons();
+
+            if (board.checkVictory()) 
+                JOptionPane.showMessageDialog(this, "Parabéns, você venceu!");
         }
+    }
+
+    private void handleFlag(int row, int col) {
+        Cell cell = board.getCell(row, col);
+
+        if (cell.isRevealed()) return;
+
+        cell.toggleFlag();
+
+        if (cell.isFlagged()) {
+            buttons[row][col].setIcon(ImageAssets.FLAG_ICON);
+            buttons[row][col].setText("");
+        } else
+            buttons[row][col].setIcon(null);
+            buttons[row][col].setText("");
     }
 
     private void updateButtons() {
@@ -83,20 +114,44 @@ public class MyJPanel extends JPanel {
             for (int c = 0; c < cols; c++) {
                 Cell cell = board.getCell(r, c);
                 if (cell.isRevealed()) {
-                    buttons[r][c].setEnabled(false);
+                    buttons[r][c].setEnabled(true);
+                    buttons[r][c].setFocusable(false);
+                    
                     buttons[r][c].setBackground(Color.LIGHT_GRAY);
 
                     if (cell.isMine()) {
-                        buttons[r][c].setText("X");
+                        buttons[r][c].setIcon(ImageAssets.MINE_ICON);
+                        buttons[r][c].setText("");
                     } else {
                         int count = cell.getAdjacentMines();
-                        if (count > 0 )
+                        if (count > 0 ) {
                             buttons[r][c].setText(String.valueOf(count));
-                        else
+                            buttons[r][c].setForeground(getColorForNumber(count));
+                        } else {
                             buttons[r][c].setText("");
+                        }
                     }
+                } else if (cell.isFlagged()) {
+                    buttons[r][c].setIcon(ImageAssets.FLAG_ICON);
+                    buttons[r][c].setText("");
+                } else {
+                    buttons[r][c].setText("");
                 }
             }
         }
     }
+
+    private Color getColorForNumber(int number) {
+    switch (number) {
+        case 1: return Color.BLUE;
+        case 2: return new Color(0, 128, 0); // Dark green
+        case 3: return Color.RED;
+        case 4: return new Color(0, 0, 128); // Dark Blue
+        case 5: return new Color(128, 0, 0); // Dark Brown
+        case 6: return Color.CYAN;
+        case 7: return Color.BLACK;
+        case 8: return Color.GRAY;
+        default: return Color.BLACK;
+    }
+}
 }
