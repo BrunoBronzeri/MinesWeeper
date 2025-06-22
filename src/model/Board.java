@@ -3,7 +3,7 @@ package model;
 import java.util.Random;
 
 public class Board {
-    private final int rows; // private inal indicates a variable that is both immutable and accessible only within the class in which it's declared
+    private final int rows; // private final indicates a variable that is both immutable and accessible only within the class in which it's declared
     private final int cols;
     private final Cell[][] grid;
     private boolean minesGenerated = false;
