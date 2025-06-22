@@ -1,3 +1,5 @@
+package app;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -22,14 +24,16 @@ public class Main {
 
             // example of components that will be added later
             JLabel timerLabel = new JLabel("Timer: 0");
-            JLabel difficultyLabel = new JLabel("Dificulty: Easy");
+            JComboBox<String> difficultySelector = new JComboBox<>(new String[]{"Easy", "Medium", "Hard"});
+            difficultySelector.setSelectedItem("Medium");
 
             infoPanel.add(timerLabel);
             infoPanel.add(Box.createHorizontalStrut(20)); // space between
-            infoPanel.add(difficultyLabel);
+            infoPanel.add(new JLabel("Dificulty:"));
+            infoPanel.add(difficultySelector);
 
             // Filed's panel
-            JPanel fieldJPanel = new MyJPanel(timerLabel);
+            JPanel fieldJPanel = new MyJPanel(timerLabel, difficultySelector);
 
             // Add to Frame
             frame.add(infoPanel, BorderLayout.NORTH);

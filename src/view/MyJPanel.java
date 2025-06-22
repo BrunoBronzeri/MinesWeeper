@@ -2,44 +2,80 @@ package view;
 
 import model.Board;
 import model.Cell;
+import app.Main;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MyJPanel extends JPanel {
-    private final int rows = 10;
-    private final int cols = 10;
-    private final JButton[][] buttons;
-    private final Board board;
+    private int rows;
+    private int cols;
+    private double minePercentage;
+    private JButton[][] buttons;
+    private Board board;
 
     private Timer swingTimer;
     private int secondsElapsed = 0;
     private JLabel timerLabel;
+    private JComboBox<String> difficultySelector;
 
-    public MyJPanel(JLabel timerLabel) {
+    public MyJPanel(JLabel timerLabel, JComboBox<String> difficultySelector) {
         this.timerLabel = timerLabel;
+        this.difficultySelector = difficultySelector;
 
-        this.setLayout(new GridLayout(rows, cols));
+        difficultySelector.addActionListener(e -> {
+            String level = (String) difficultySelector.getSelectedItem();
+            restartWithDifficulty(level);
+        });
+
+        setLayout(new BorderLayout());
+        createField("Medium"); // default
+    }
+
+    private void createField(String level) {
+        removeAll();
+        stopTimer();
+        secondsElapsed = 0;
+        timerLabel.setText("Timer: 0");
+
+        switch (level) {
+            case "Easy":
+                rows = 8;
+                cols = 8;
+                minePercentage = 0.2;
+                break;
+            case "Medium":
+                rows = 12;
+                cols = 12;
+                minePercentage = 0.2;
+                break;
+            case "Hard":
+                rows = 18;
+                cols = 18;
+                minePercentage = 0.25;
+                break;
+        }
+
+        board = new Board(rows, cols, minePercentage);
         buttons = new JButton[rows][cols];
-        this.board = new Board(rows, cols, 0.2); // 20% os mines
+
+        JPanel gridPanel = new JPanel(new GridLayout(rows, cols));
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 JButton btn = new JButton();
-                btn.setPreferredSize(new Dimension(40, 40));
+                btn.setPreferredSize(new Dimension(60, 60)); // 40x40
                 btn.setFont(new Font("Monospaced", Font.BOLD, 20));
                 btn.setBackground(new Color(150, 220, 80));
                 btn.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-                // btn.setBackground(new Color(180, 220, 180));
 
                 int finalR = r;
                 int finalC = c;
-                
-                btn.addMouseListener(new MouseAdapter() {
 
-                    // Button:hover simulator ----------------
+                btn.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseEntered(MouseEvent e) {
                         if (!board.getCell(finalR, finalC).isRevealed()) {
@@ -50,10 +86,9 @@ public class MyJPanel extends JPanel {
                     @Override
                     public void mouseExited(MouseEvent e) {
                         if (!board.getCell(finalR, finalC).isRevealed()) {
-                            btn.setBackground(new Color(160, 230, 70));
+                            btn.setBackground(new Color(150, 220, 80));
                         }
                     }
-                    // Button:hover simulator ----------------
 
                     @Override
                     public void mousePressed(MouseEvent e) {
@@ -67,9 +102,13 @@ public class MyJPanel extends JPanel {
                 });
 
                 buttons[r][c] = btn;
-                this.add(btn);
+                gridPanel.add(btn);
             }
         }
+
+        add(gridPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     private void startTimer() {
@@ -83,11 +122,11 @@ public class MyJPanel extends JPanel {
     private void stopTimer() {
         if (swingTimer != null) {
             swingTimer.stop();
+            swingTimer = null;
         }
     }
 
     private void handleClick(int row, int col) {
-        
         if (!board.areMinesGenerated()) {
             board.generateMinesEnsuringFirstZero(row, col);
         }
@@ -99,23 +138,20 @@ public class MyJPanel extends JPanel {
 
         if (cell.isMine()) {
             cell.reveal();
-
             buttons[row][col].setIcon(ImageAssets.MINE_ICON);
             buttons[row][col].setText("");
             buttons[row][col].setBackground(Color.RED);
 
             stopTimer();
-            revealAllMines();
-            JOptionPane.showMessageDialog(this, "BOOM! Você perdeu!\nTempo de jogo: " + secondsElapsed);
-
-            System.out.println("BOOM! Uma mina foi explodida.");
+            animateRevealMines();
         } else {
             board.revealRecursively(row, col);
             updateButtons();
 
             if (board.checkVictory()) {
                 stopTimer();
-                JOptionPane.showMessageDialog(this, "Parabéns, você venceu!\nTempo de jogo: " + secondsElapsed);
+                JOptionPane.showMessageDialog(this, "Parabéns, você venceu!");
+                addRestartButton();
             }
         }
     }
@@ -130,9 +166,10 @@ public class MyJPanel extends JPanel {
         if (cell.isFlagged()) {
             buttons[row][col].setIcon(ImageAssets.FLAG_ICON);
             buttons[row][col].setText("");
-        } else
+        } else {
             buttons[row][col].setIcon(null);
             buttons[row][col].setText("");
+        }
     }
 
     private void updateButtons() {
@@ -141,7 +178,7 @@ public class MyJPanel extends JPanel {
                 Cell cell = board.getCell(r, c);
                 if (cell.isRevealed()) {
                     buttons[r][c].setEnabled(true);
-                    buttons[r][c].setFocusable(false);                    
+                    buttons[r][c].setFocusable(false);
                     buttons[r][c].setBackground(Color.LIGHT_GRAY);
 
                     if (cell.isMine()) {
@@ -149,7 +186,7 @@ public class MyJPanel extends JPanel {
                         buttons[r][c].setText("");
                     } else {
                         int count = cell.getAdjacentMines();
-                        if (count > 0 ) {
+                        if (count > 0) {
                             buttons[r][c].setText(String.valueOf(count));
                             buttons[r][c].setForeground(getColorForNumber(count));
                         } else {
@@ -161,36 +198,75 @@ public class MyJPanel extends JPanel {
                     buttons[r][c].setText("");
                 } else {
                     buttons[r][c].setText("");
-                    // buttons[r][c].setIcon(null);
+                    buttons[r][c].setIcon(null);
                 }
             }
         }
     }
 
-    private void revealAllMines() {
+    private void animateRevealMines() {
+        List<Point> minePoints = new ArrayList<>();
+
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 Cell cell = board.getCell(r, c);
                 if (cell.isMine() && !cell.isRevealed()) {
-                    buttons[r][c].setIcon(ImageAssets.MINE_ICON);
-                    buttons[r][c].setText("");
-                    buttons[r][c].setBackground(Color.RED);
+                    minePoints.add(new Point(r, c));
                 }
             }
+        }
+
+        Timer revealTimer = new Timer(200, null);
+        revealTimer.addActionListener(new ActionListener() {
+            int index = 0;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (index < minePoints.size()) {
+                    Point p = minePoints.get(index);
+                    buttons[p.x][p.y].setIcon(ImageAssets.MINE_ICON);
+                    buttons[p.x][p.y].setBackground(Color.RED);
+                    index++;
+                } else {
+                    revealTimer.stop();
+                    JOptionPane.showMessageDialog(MyJPanel.this, "BOOM! Você perdeu.");
+                    addRestartButton();
+                }
+            }
+        });
+        revealTimer.start();
+    }
+
+    private void addRestartButton() {
+        JButton restartButton = new JButton("Reiniciar");
+        restartButton.addActionListener(e -> {
+            String level = (String) difficultySelector.getSelectedItem();
+            createField(level);
+        });
+
+        Container parent = this.getParent();
+        if (parent instanceof JPanel) {
+            ((JPanel) parent).add(restartButton, BorderLayout.SOUTH);
+            parent.revalidate();
+            parent.repaint();
         }
     }
 
     private Color getColorForNumber(int number) {
-    switch (number) {
-        case 1: return Color.BLUE;
-        case 2: return new Color(0, 128, 0); // Dark green
-        case 3: return Color.RED;
-        case 4: return new Color(0, 0, 128); // Dark Blue
-        case 5: return new Color(128, 0, 0); // Dark Brown
-        case 6: return Color.CYAN;
-        case 7: return Color.BLACK;
-        case 8: return Color.GRAY;
-        default: return Color.BLACK;
+        switch (number) {
+            case 1: return Color.BLUE;
+            case 2: return new Color(0, 128, 0);
+            case 3: return Color.RED;
+            case 4: return new Color(0, 0, 128);
+            case 5: return new Color(128, 0, 0);
+            case 6: return Color.CYAN;
+            case 7: return Color.BLACK;
+            case 8: return Color.GRAY;
+            default: return Color.BLACK;
+        }
     }
-}
+
+    private void restartWithDifficulty(String level) {
+        createField(level);
+    }
 }

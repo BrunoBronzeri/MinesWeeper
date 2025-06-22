@@ -9,6 +9,7 @@
 
 # Ignore code buffer file
 /codeBuffer.txt
+/codeBackup.txt
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
