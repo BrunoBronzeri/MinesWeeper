@@ -1,6 +1,8 @@
 package model;
 
 import java.util.Random;
+import java.awt.Point;
+
 
 public class Board {
     private final int rows; // private final indicates a variable that is both immutable and accessible only within the class in which it's declared
@@ -143,6 +145,12 @@ public class Board {
         }
     }
 
+    public void addObserverToAllCells(CellObserver observer) {
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++)
+                grid[r][c].addObserver(observer);
+    }
+
     // Getters
     public Cell getCell(int row, int col) {
         return grid[row][col];
@@ -150,4 +158,15 @@ public class Board {
 
     public int getRows() { return rows; }
     public int getCols() { return cols; }
+
+    public Point getCellPosition(Cell target) {
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (grid[r][c] == target) {
+                return new Point(r, c);
+            }
+        }
+    }
+    return null; // nunca deve acontecer se o cell está no grid
+}
 }

@@ -2,6 +2,7 @@ package view;
 
 import model.Board;
 import model.Cell;
+import model.CellObserver;
 import app.Main;
 
 import javax.swing.*;
@@ -10,7 +11,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MyJPanel extends JPanel {
+public class MyJPanel extends JPanel implements CellObserver {
     private int rows;
     private int cols;
     private double minePercentage;
@@ -22,6 +23,8 @@ public class MyJPanel extends JPanel {
     private int secondsElapsed = 0;
     private JLabel timerLabel;
     private JComboBox<String> difficultySelector;
+
+    private boolean interactionLocked = false;
 
     public MyJPanel(JLabel timerLabel, JComboBox<String> difficultySelector, JButton restartButton) {
         this.timerLabel = timerLabel;
@@ -39,6 +42,7 @@ public class MyJPanel extends JPanel {
 
         setLayout(new BorderLayout());
         createField("Medium"); // default
+        board.addObserverToAllCells(this);
     }
 
     private void createField(String level) {
@@ -136,6 +140,9 @@ public class MyJPanel extends JPanel {
         add(gridPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
+
+        interactionLocked = false;
+        board.addObserverToAllCells(this);
     }
 
     private void startTimer() {
@@ -156,6 +163,9 @@ public class MyJPanel extends JPanel {
     }
 
     private void handleClick(int row, int col) {
+
+        if (interactionLocked) return;
+
         if (!board.areMinesGenerated()) {
             board.generateMinesEnsuringFirstZero(row, col);
         }
@@ -175,7 +185,7 @@ public class MyJPanel extends JPanel {
             animateRevealMines();
         } else {
             board.revealRecursively(row, col);
-            updateButtons();
+            // updateButtons();
 
             if (board.checkVictory()) {
                 stopTimer();
@@ -185,7 +195,20 @@ public class MyJPanel extends JPanel {
         }
     }
 
+    private void bindObservers() {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                Cell cell = board.getCell(r, c);
+                cell.addObserver(this);
+            }
+        }
+    }
+
+
     private void handleFlag(int row, int col) {
+
+        if (interactionLocked) return;
+
         Cell cell = board.getCell(row, col);
 
         if (cell.isRevealed()) return;
@@ -201,35 +224,40 @@ public class MyJPanel extends JPanel {
         }
     }
 
-    private void updateButtons() {
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                Cell cell = board.getCell(r, c);
-                if (cell.isRevealed()) {
-                    buttons[r][c].setEnabled(true);
-                    buttons[r][c].setFocusable(false);
-                    buttons[r][c].setBackground(Color.LIGHT_GRAY);
+    @Override
+    public void cellUpdated(Cell cell) {
+        Point position = board.getCellPosition(cell);
+        int row = position.x;
+        int col = position.y;
+        updateButtonAt(row, col);
+    }
 
-                    if (cell.isMine()) {
-                        buttons[r][c].setIcon(ImageAssets.MINE_ICON);
-                        buttons[r][c].setText("");
-                    } else {
-                        int count = cell.getAdjacentMines();
-                        if (count > 0) {
-                            buttons[r][c].setText(String.valueOf(count));
-                            buttons[r][c].setForeground(getColorForNumber(count));
-                        } else {
-                            buttons[r][c].setText("");
-                        }
-                    }
-                } else if (cell.isFlagged()) {
-                    buttons[r][c].setIcon(ImageAssets.FLAG_ICON);
-                    buttons[r][c].setText("");
+    private void updateButtonAt(int row, int col) {
+        Cell cell = board.getCell(row, col);
+        JButton button = buttons[row][col];
+
+        if (cell.isRevealed()) {
+            button.setBackground(Color.LIGHT_GRAY);
+            button.setEnabled(true);
+            button.setFocusable(false);
+            if (cell.isMine()) {
+                button.setIcon(ImageAssets.MINE_ICON);
+                button.setText("");
+            } else {
+                int count = cell.getAdjacentMines();
+                if (count > 0) {
+                    button.setText(String.valueOf(count));
+                    button.setForeground(getColorForNumber(count));
                 } else {
-                    buttons[r][c].setText("");
-                    buttons[r][c].setIcon(null);
+                    button.setText("");
                 }
             }
+        } else if (cell.isFlagged()) {
+            button.setIcon(ImageAssets.FLAG_ICON);
+            button.setText("");
+        } else {
+            button.setIcon(null);
+            button.setText("");
         }
     }
 
@@ -244,8 +272,8 @@ public class MyJPanel extends JPanel {
                 }
             }
         }
-
-        // setFieldEnabled(false);
+        
+        interactionLocked = true; 
 
         revealTimer = new Timer(200, null);
         revealTimer.addActionListener(new ActionListener() {
@@ -294,7 +322,7 @@ public class MyJPanel extends JPanel {
             case 3: return Color.RED;
             case 4: return new Color(0, 0, 128);
             case 5: return new Color(128, 0, 0);
-            case 6: return Color.CYAN;
+            case 6: return Color.ORANGE;
             case 7: return Color.BLACK;
             case 8: return Color.GRAY;
             default: return Color.BLACK;

@@ -17,6 +17,7 @@ public class Main {
             JFrame frame = new JFrame("Minesweeper");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLayout(new BorderLayout());
+            frame.setPreferredSize(new Dimension(700, 780));
 
             // Info panel on top - Header
             JPanel infoPanel = new JPanel(new BorderLayout());

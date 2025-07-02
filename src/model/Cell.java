@@ -1,11 +1,15 @@
 package model;
 
-public class Cell {
+import java.util.ArrayList;
+import java.util.List;
+
+public class Cell implements CellObserver {
 
     private boolean mine;
     private boolean revealed;
     private int adjacentMines;
     private boolean flagged = false;
+    private final List<CellObserver> observers = new ArrayList<>();
 
     // Constructor
     public Cell(boolean mine) {
@@ -14,6 +18,16 @@ public class Cell {
     }
 
     // Methods
+    public void addObserver(CellObserver observer) {
+        observers.add(observer);
+    }
+
+    private void notifyObservers() {
+        for (CellObserver observer : observers) {
+            observer.cellUpdated(this);
+        }
+    }
+
     public boolean isMine() {
         return mine;
     }
@@ -24,6 +38,7 @@ public class Cell {
     
     public void reveal() {
         this.revealed = true;
+        notifyObservers();
     }
 
     public boolean isFlagged() {
@@ -32,6 +47,7 @@ public class Cell {
 
     public void toggleFlag() {
         flagged = !flagged;
+        notifyObservers();
     }
 
     // Setterand Getters
@@ -45,6 +61,12 @@ public class Cell {
     
     public int getAdjacentMines() {
         return adjacentMines;
+    }
+
+    @Override
+    public void cellUpdated(Cell cell) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'cellUpdated'");
     }
 
 }
