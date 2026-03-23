@@ -20,7 +20,7 @@ Follow the steps bellow to be able to play Minesweeper.
 
 # Cell.java
 
-### 📦 Classe `Cell` (pacote: `model`)
+### Classe `Cell` (pacote: `model`)
 
 **Responsabilidade:** Representa uma célula individual no campo do jogo Campo Minado. Ela armazena informações como se há mina, se está revelada ou marcada com bandeira, além da contagem de minas vizinhas. Também é a classe que notifica os observadores quando seu estado muda.
 
@@ -78,7 +78,7 @@ public void notifyObservers()
 
 # CellObserver.java
 
-### 📦 Interface `CellObserver` (pacote: `model`)
+### Interface `CellObserver` (pacote: `model`)
 
 **Responsabilidade:** Define o contrato para objetos que desejam ser notificados quando o estado de uma `Cell` mudar. É parte do padrão de projeto **Observer**, implementado manualmente no projeto.
 
@@ -106,7 +106,7 @@ public interface CellObserver {
 
 # Board.java
 
-### 📦 Classe `Board` (pacote: `model`)
+### Classe `Board` (pacote: `model`)
 
 **Responsabilidade:** Representa o tabuleiro do jogo. Gerencia as células, minas, revelações recursivas e lógica de vitória. Atua como o **motor do jogo**.
 
@@ -303,7 +303,7 @@ MyJPanel extends JPanel implements CellObserver
 - Não guarda como atributo.
 - Só precisa de `MyJPanel` para inicializar a interface.
 
-### **MyJPanel ────**▶ **Board**
+### **MyJPanel ────▶ **Board**
 
 **Tipo:** Associação simples (uso direto, mas não composição)
 
